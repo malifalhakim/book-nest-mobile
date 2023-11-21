@@ -1,6 +1,10 @@
+// ignore_for_file: use_build_context_synchronously
+import 'dart:convert';
+import 'package:book_nest_mobile/screens/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:book_nest_mobile/widgets/left_drawer.dart';
-import 'package:book_nest_mobile/model/book.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 
 class BookFormPage extends StatefulWidget {
   const BookFormPage({super.key});
@@ -19,13 +23,11 @@ class _BookFormPageState extends State<BookFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Center(
-          child: Text(
-            'Form Tambah Item',
-          ),
-        ),
+        title: const Text('Add Books'),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
@@ -164,43 +166,34 @@ class _BookFormPageState extends State<BookFormPage> {
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all(Colors.indigo),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      books.add(Book(
-                          name: _name,
-                          price: _price,
-                          author: _author,
-                          amount: _amount,
-                          description: _description));
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('Item berhasil tersimpan'),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Titile: $_name'),
-                                  Text('Price: $_price'),
-                                  Text('Author: $_author'),
-                                  Text('Amount : $_amount'),
-                                  Text('Description: $_description'),
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      _formKey.currentState!.reset();
+                      // Ganti URL dan jangan lupa tambahkan trailing slash (/) di akhir URL!
+                      final response = await request.postJson(
+                          "https://malif-al-tugas.pbp.cs.ui.ac.id/create-flutter/",
+                          jsonEncode(<String, String>{
+                            'name': _name,
+                            'price': _price.toString(),
+                            'amount': _amount.toString(),
+                            'author': _author,
+                            'description': _description,
+                          }));
+                      if (response['status'] == 'success') {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Produk baru berhasil disimpan!"),
+                        ));
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => MyHomePage()),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content:
+                              Text("Terdapat kesalahan, silakan coba lagi."),
+                        ));
+                      }
                     }
                   },
                   child: const Text(
